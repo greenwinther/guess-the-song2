@@ -9,16 +9,20 @@ import { registerSockets } from "./sockets/core";
 import youtube from "./routes/youtube";
 import { rateLimit } from "./middleware/rateLimit";
 import cleanupRoutes from "./routes/cleanup";
+import testErrorRoutes from "./routes/testError";
+import { errorMiddleware } from "./utils/httpError";
 
 const app = express();
 app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
-app.get("/", (_req, res) => res.send("Guess-the-Song server running"));
 app.use(health);
 app.use("/youtube", rateLimit({ limit: 5, windowMs: 10_000 }));
 app.use(youtube);
 app.use(cleanupRoutes);
+app.use(testErrorRoutes);
+
+app.use(errorMiddleware);
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: corsOrigins } });
