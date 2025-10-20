@@ -8,6 +8,7 @@ import { registerRevealSockets } from "./reveal";
 import { registerScoreSockets } from "./scores";
 import { registerResultsSockets } from "./results";
 import { registerRoomSaveSockets } from "./roomSave";
+import { registerRecapSockets } from "./recap";
 
 export function registerSockets(io: Server) {
 	registerRoomSockets(io);
@@ -19,4 +20,5 @@ export function registerSockets(io: Server) {
 	registerScoreSockets(io);
 	registerResultsSockets(io);
 	registerRoomSaveSockets(io);
+	registerRecapSockets(io);
 }

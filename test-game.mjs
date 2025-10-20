@@ -154,6 +154,9 @@ s.on("connect", async () => {
 
 		const next2 = await emitAsync(s, "song:next", { roomCode: code });
 		console.log("song:next #2 ->", next2.res);
+
+		const recap = await emitAsync(s, "reveal:recap", { roomCode: code });
+		console.log("reveal:recap ->", recap.res);
 	} catch (e) {
 		console.error("TEST ERROR:", e.message);
 	} finally {

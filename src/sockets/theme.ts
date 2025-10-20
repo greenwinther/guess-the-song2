@@ -1,6 +1,7 @@
 import type { Server, Socket } from "socket.io";
 import { z } from "zod";
 import { upsertThemeAttemptService, lockThemeAttemptService } from "../services/theme";
+import { getScoresService } from "../services/scores";
 
 const upsertSchema = z.object({
 	roomCode: z.string().trim().min(4),
@@ -41,6 +42,13 @@ export function registerThemeSockets(io: Server) {
 					guesserId: attempt.guesserId,
 					lockedAt: attempt.lockedAt,
 				});
+
+				// If that lock solved the theme & awarded points, refresh leaderboard
+				if (attempt.isCorrect) {
+					const scores = await getScoresService(data.roomCode);
+					io.to(`room:${data.roomCode}`).emit("scores:updated", { scores });
+				}
+
 				cb?.({ ok: true, attempt });
 			} catch (e: any) {
 				cb?.({ ok: false, error: e?.message ?? "THEME_LOCK_FAILED" });
