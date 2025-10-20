@@ -68,9 +68,42 @@ s.on("connect", async () => {
 			console.log("added:", add.res.playlistItem);
 		}
 
-		// 5) Start the game
+		// ... after you join and before game:start
+		const submitterIds = [];
+
+		for (const song of songs) {
+			const add = await emitAsync(s, "submission:add", {
+				roomCode: code,
+				addedByMemberId: memberId,
+				...song,
+			});
+			if (!add.res?.ok) throw new Error("submission:add failed: " + add.res?.error);
+			console.log("added:", add.res.playlistItem);
+			submitterIds.push(add.res.submitterId); // <— keep the valid submitterId for this room
+		}
+
+		// start game
 		const start = await emitAsync(s, "game:start", { roomCode: code });
 		console.log("game:start ->", start.res);
+
+		// upsert a guess for the first item using a real submitterId
+		const firstItemId = start.res.playlistItemId;
+		const upsert = await emitAsync(s, "guess:upsert", {
+			roomCode: code,
+			playlistItemId: firstItemId,
+			guesserId: memberId,
+			guessedSubmitterId: submitterIds[0], // <— valid ID
+		});
+		console.log("guess:upsert ->", upsert.res);
+
+		// now locking will succeed
+		const lock = await emitAsync(s, "guess:lock", {
+			roomCode: code,
+			playlistItemId: firstItemId,
+			guesserId: memberId,
+		});
+		console.log("guess:lock ->", lock.res);
+
 		if (!start.res?.ok) throw new Error("game:start failed");
 
 		// 6) Advance to next songs (twice to hit RECAP on the 2nd next)
