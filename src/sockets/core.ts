@@ -7,6 +7,7 @@ import { registerThemeSockets } from "./theme";
 import { registerRevealSockets } from "./reveal";
 import { registerScoreSockets } from "./scores";
 import { registerResultsSockets } from "./results";
+import { registerRoomSaveSockets } from "./roomSave";
 
 export function registerSockets(io: Server) {
 	registerRoomSockets(io);
@@ -17,4 +18,5 @@ export function registerSockets(io: Server) {
 	registerRevealSockets(io);
 	registerScoreSockets(io);
 	registerResultsSockets(io);
+	registerRoomSaveSockets(io);
 }

@@ -28,6 +28,10 @@ s.on("connect", async () => {
 			clientKey: "uuid-host-123456",
 			hardcore: false,
 		});
+
+		const save = await emitAsync(s, "room:save", { roomCode: code });
+		console.log("room:save ->", save.res);
+
 		if (!join.res?.ok) throw new Error("room:join failed");
 		const memberId = join.res.member.id;
 
