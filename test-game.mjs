@@ -110,9 +110,6 @@ s.on("connect", async () => {
 		const next1 = await emitAsync(s, "song:next", { roomCode: code });
 		console.log("song:next #1 ->", next1.res);
 
-		const next2 = await emitAsync(s, "song:next", { roomCode: code });
-		console.log("song:next #2 ->", next2.res);
-
 		// lock a theme attempt that matches (your room theme is "Animals" in the test)
 		const themeUpsert = await emitAsync(s, "themeAttempt:upsert", {
 			roomCode: code,
@@ -138,6 +135,21 @@ s.on("connect", async () => {
 			playlistItemId: firstItemId,
 		});
 		console.log("reveal1 ->", reveal1.res);
+
+		const songResults = await emitAsync(s, "results:song", {
+			roomCode: code,
+			playlistItemId: firstItemId,
+		});
+		console.log("results:song ->", songResults.res);
+
+		const playerHits = await emitAsync(s, "results:player", {
+			roomCode: code,
+			memberId,
+		});
+		console.log("results:player ->", playerHits.res);
+
+		const next2 = await emitAsync(s, "song:next", { roomCode: code });
+		console.log("song:next #2 ->", next2.res);
 	} catch (e) {
 		console.error("TEST ERROR:", e.message);
 	} finally {
