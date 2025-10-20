@@ -4,6 +4,16 @@ import { playlistItems } from "../db/schema/playlist";
 import { roomMembers } from "../db/schema/members";
 import { themeAttempts, themeProgress } from "../db/schema/theme";
 import { eq, and } from "drizzle-orm";
+import { memberScores } from "../db/schema/scores";
+import { normalize } from "../utils/text";
+
+// scoring constants
+const THEME_BASE_POINTS = 10;
+const THEME_STEP_POINTS = 1;
+function themeScoreForPosition(pos: number) {
+	const v = THEME_BASE_POINTS - THEME_STEP_POINTS * pos;
+	return v > 0 ? v : 0;
+}
 
 function assertPhase(phase?: string) {
 	if (phase !== "GUESSING" && phase !== "RECAP") {
@@ -101,26 +111,94 @@ export async function lockThemeAttemptService(args: {
 	const [member] = await db.select().from(roomMembers).where(eq(roomMembers.id, args.guesserId)).limit(1);
 	if (!member || member.roomId !== room.id) throw new Error("INVALID_MEMBER");
 
-	const [existing] = await db
-		.select()
-		.from(themeAttempts)
-		.where(
-			and(
-				eq(themeAttempts.roomId, room.id),
-				eq(themeAttempts.playlistItemId, pli.id),
-				eq(themeAttempts.guesserId, member.id)
+	const now = new Date();
+
+	return await db.transaction(async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(themeAttempts)
+			.where(
+				and(
+					eq(themeAttempts.roomId, room.id),
+					eq(themeAttempts.playlistItemId, pli.id),
+					eq(themeAttempts.guesserId, member.id)
+				)
 			)
-		)
-		.limit(1);
+			.limit(1);
 
-	if (!existing) throw new Error("NO_THEME_ATTEMPT_TO_LOCK");
-	if (existing.lockedAt) return { attempt: existing };
+		if (!existing) throw new Error("NO_THEME_ATTEMPT_TO_LOCK");
+		if (existing.lockedAt) return { attempt: existing, solved: false as const };
 
-	const [locked] = await db
-		.update(themeAttempts)
-		.set({ lockedAt: new Date() })
-		.where(eq(themeAttempts.id, existing.id))
-		.returning();
+		// lock it
+		const [locked] = await tx
+			.update(themeAttempts)
+			.set({ lockedAt: now })
+			.where(eq(themeAttempts.id, existing.id))
+			.returning();
 
-	return { attempt: locked };
+		// If room.theme not set, we can’t auto-check (just return)
+		if (!room.theme) return { attempt: locked, solved: false as const };
+
+		// If already solved previously, return
+		const [prog] = await tx
+			.select()
+			.from(themeProgress)
+			.where(and(eq(themeProgress.roomId, room.id), eq(themeProgress.guesserId, member.id)))
+			.limit(1);
+
+		if (prog?.solved) return { attempt: locked, solved: false as const };
+
+		// check correctness
+		const isCorrect = normalize(locked.text) === normalize(room.theme);
+		if (!isCorrect) return { attempt: locked, solved: false as const };
+
+		// mark attempt + progress
+		await tx.update(themeAttempts).set({ isCorrect: true }).where(eq(themeAttempts.id, locked.id));
+
+		if (prog) {
+			await tx
+				.update(themeProgress)
+				.set({ solved: true, solvedAt: now, solvedOnPos: pli.position, attempts: prog.attempts + 1 })
+				.where(eq(themeProgress.id, prog.id));
+		} else {
+			await tx.insert(themeProgress).values({
+				roomId: room.id,
+				guesserId: member.id,
+				solved: true,
+				solvedAt: now,
+				solvedOnPos: pli.position,
+				attempts: 1,
+			});
+		}
+
+		// award theme points once
+		const delta = themeScoreForPosition(pli.position);
+		if (delta > 0) {
+			const existingScore = await tx
+				.select()
+				.from(memberScores)
+				.where(and(eq(memberScores.roomId, room.id), eq(memberScores.memberId, member.id)))
+				.limit(1);
+
+			if (existingScore[0]) {
+				await tx
+					.update(memberScores)
+					.set({
+						themePoints: existingScore[0].themePoints + delta,
+						totalPoints: existingScore[0].totalPoints + delta,
+					})
+					.where(eq(memberScores.id, existingScore[0].id));
+			} else {
+				await tx.insert(memberScores).values({
+					roomId: room.id,
+					memberId: member.id,
+					guessPoints: 0,
+					themePoints: delta,
+					totalPoints: delta,
+				});
+			}
+		}
+
+		return { attempt: { ...locked, isCorrect: true }, solved: true as const, points: delta };
+	});
 }
