@@ -86,6 +86,8 @@ s.on("connect", async () => {
 		const start = await emitAsync(s, "game:start", { roomCode: code });
 		console.log("game:start ->", start.res);
 
+		if (!start.res?.ok) throw new Error("game:start failed");
+
 		// upsert a guess for the first item using a real submitterId
 		const firstItemId = start.res.playlistItemId;
 		const upsert = await emitAsync(s, "guess:upsert", {
@@ -104,14 +106,18 @@ s.on("connect", async () => {
 		});
 		console.log("guess:lock ->", lock.res);
 
-		if (!start.res?.ok) throw new Error("game:start failed");
-
 		// 6) Advance to next songs (twice to hit RECAP on the 2nd next)
 		const next1 = await emitAsync(s, "song:next", { roomCode: code });
 		console.log("song:next #1 ->", next1.res);
 
 		const next2 = await emitAsync(s, "song:next", { roomCode: code });
 		console.log("song:next #2 ->", next2.res);
+
+		const reveal1 = await emitAsync(s, "reveal:nextSong", {
+			roomCode: code,
+			playlistItemId: firstItemId,
+		});
+		console.log("reveal1 ->", reveal1.res);
 	} catch (e) {
 		console.error("TEST ERROR:", e.message);
 	} finally {
