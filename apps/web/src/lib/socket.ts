@@ -1,8 +1,9 @@
 "use client";
 
 import { io, Socket } from "socket.io-client";
+import type { ServerToClientEvents, ClientToServerEvents } from "@guess-the-song2/shared";
 
-let socket: Socket | null = null;
+let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
 export const getSocket = () => {
 	if (!socket) {

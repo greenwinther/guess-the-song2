@@ -11,6 +11,7 @@ import { rateLimit } from "./middleware/rateLimit";
 import cleanupRoutes from "./routes/cleanup";
 import testErrorRoutes from "./routes/testError";
 import { errorMiddleware } from "./utils/httpError";
+import type { ClientToServerEvents, ServerToClientEvents } from "@guess-the-song2/shared";
 
 const app = express();
 app.use(cors({ origin: corsOrigins }));
@@ -25,8 +26,10 @@ app.use(testErrorRoutes);
 app.use(errorMiddleware);
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: corsOrigins } });
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
+	cors: { origin: corsOrigins },
+});
 registerSockets(io);
 
-const PORT = Number(process.env.PORT ?? 3001);
+const PORT = Number(process.env.PORT ?? 4000);
 server.listen(PORT, () => console.log(`Server listening on :${PORT}`));
