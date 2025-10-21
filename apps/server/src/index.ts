@@ -18,8 +18,7 @@ app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 app.use(health);
-app.use("/youtube", rateLimit({ limit: 5, windowMs: 10_000 }));
-app.use(youtube);
+app.use("/youtube", rateLimit({ limit: 5, windowMs: 10_000 }), youtube);
 app.use(cleanupRoutes);
 app.use(testErrorRoutes);
 
