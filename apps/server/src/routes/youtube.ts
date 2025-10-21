@@ -2,8 +2,8 @@ import { Router, Request, Response } from "express";
 
 const router: ReturnType<typeof Router> = Router();
 
-// GET /youtube/search?q=...
-router.get("/youtube/search", async (req: Request, res: Response) => {
+// GET /search?q=...
+router.get("/search", async (req: Request, res: Response) => {
 	const q = String(req.query.q ?? "").trim();
 	if (!q) return res.status(400).json({ ok: false, error: "MISSING_QUERY" });
 
