@@ -201,3 +201,31 @@ export async function nextSongService(roomCode: string) {
 		return { phase: room.phase, currentIndex: nextIdx, nextPlaylistItemId: nextItem.id };
 	});
 }
+
+export async function setSongIndexService(args: { roomCode: string; index: number }) {
+	const [room] = await db.select().from(rooms).where(eq(rooms.code, args.roomCode)).limit(1);
+	if (!room) throw new Error("ROOM_NOT_FOUND");
+	const items = await db
+		.select()
+		.from(playlistItems)
+		.where(eq(playlistItems.roomId, room.id))
+		.orderBy(asc(playlistItems.position));
+	if (args.index < 0 || args.index >= items.length) throw new Error("INDEX_OUT_OF_RANGE");
+
+	const now = new Date();
+	const target = items[args.index];
+
+	await db.transaction(async (tx) => {
+		// set startedAt for target if missing
+		await tx
+			.update(playlistItems)
+			.set({ startedAt: target.startedAt ?? now })
+			.where(eq(playlistItems.id, target.id));
+		await tx
+			.update(rooms)
+			.set({ phase: "GUESSING", currentIndex: args.index })
+			.where(eq(rooms.id, room.id));
+	});
+
+	return { currentIndex: args.index, playlistItemId: target.id };
+}
