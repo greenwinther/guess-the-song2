@@ -1,12 +1,20 @@
 {
   "name": "guess-the-song2",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm --workspace apps/server run dev",
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:web\"",
     "build": "npm --workspace apps/server run build",
     "start": "npm --workspace apps/server run start",
     "drizzle:generate": "npm --workspace apps/server run drizzle:generate",
     "drizzle:push": "npm --workspace apps/server run drizzle:push"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
