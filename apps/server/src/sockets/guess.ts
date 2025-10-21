@@ -1,6 +1,11 @@
 import type { Server, Socket } from "socket.io";
 import { z } from "zod";
-import { upsertGuessService, lockGuessService } from "../services/guess";
+import {
+	upsertGuessService,
+	lockGuessService,
+	lockAllGuessesForMember,
+	lockAllGuessesForRoom,
+} from "../services/guess";
 
 const upsertSchema = z.object({
 	roomCode: z.string().trim().min(4),
@@ -13,6 +18,14 @@ const lockSchema = z.object({
 	roomCode: z.string().trim().min(4),
 	playlistItemId: z.number().int().positive(),
 	guesserId: z.number().int().positive(),
+});
+
+const submitAllSchema = z.object({
+	roomCode: z.string().trim().min(4),
+	memberId: z.number().int().positive(), // the caller’s memberId
+});
+const hostLockAllSchema = z.object({
+	roomCode: z.string().trim().min(4),
 });
 
 export function registerGuessSockets(io: Server) {
@@ -51,6 +64,28 @@ export function registerGuessSockets(io: Server) {
 			} catch (e: any) {
 				const code = e?.message ?? "GUESS_LOCK_FAILED";
 				cb?.({ ok: false, error: code });
+			}
+		});
+
+		socket.on("guess:submitAll", async (payload, cb) => {
+			try {
+				const { roomCode, memberId } = submitAllSchema.parse(payload ?? {});
+				const res = await lockAllGuessesForMember({ roomCode, memberId });
+				io.to(`room:${roomCode}`).emit("guess:bulk-locked", { memberId, scope: "self" });
+				cb?.({ ok: true, ...res });
+			} catch (e: any) {
+				cb?.({ ok: false, error: e?.message ?? "GUESS_SUBMIT_ALL_FAILED" });
+			}
+		});
+
+		socket.on("guess:lockAllForRoom", async (payload, cb) => {
+			try {
+				const { roomCode } = hostLockAllSchema.parse(payload ?? {});
+				const res = await lockAllGuessesForRoom({ roomCode });
+				io.to(`room:${roomCode}`).emit("guess:bulk-locked", { scope: "room" });
+				cb?.({ ok: true, ...res });
+			} catch (e: any) {
+				cb?.({ ok: false, error: e?.message ?? "GUESS_LOCK_ALL_ROOM_FAILED" });
 			}
 		});
 	});

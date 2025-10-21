@@ -4,7 +4,7 @@ import { playlistItems } from "../db/schema/playlist";
 import { roomMembers } from "../db/schema/members";
 import { guesses } from "../db/schema/guesses";
 import { submitters } from "../db/schema/submitters";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray, isNull } from "drizzle-orm";
 
 function assertPhase(phase?: string) {
 	if (phase !== "GUESSING" && phase !== "RECAP") {
@@ -134,4 +134,30 @@ export async function lockGuessService(args: {
 		.returning();
 
 	return { guess: locked };
+}
+
+export async function lockAllGuessesForMember(args: { roomCode: string; memberId: number }) {
+	const [room] = await db.select().from(rooms).where(eq(rooms.code, args.roomCode)).limit(1);
+	if (!room) throw new Error("ROOM_NOT_FOUND");
+
+	const now = new Date();
+	await db
+		.update(guesses)
+		.set({ lockedAt: now })
+		.where(
+			and(eq(guesses.roomId, room.id), eq(guesses.guesserId, args.memberId), isNull(guesses.lockedAt))
+		);
+
+	return { lockedAt: now };
+}
+
+export async function lockAllGuessesForRoom(args: { roomCode: string }) {
+	const [room] = await db.select().from(rooms).where(eq(rooms.code, args.roomCode)).limit(1);
+	if (!room) throw new Error("ROOM_NOT_FOUND");
+	const now = new Date();
+	await db
+		.update(guesses)
+		.set({ lockedAt: now })
+		.where(and(eq(guesses.roomId, room.id), isNull(guesses.lockedAt)));
+	return { lockedAt: now };
 }
