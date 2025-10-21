@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSocket } from "@/contexts/SocketProvider";
 import { useParams } from "next/navigation";
+import { getClientKey } from "@/lib/clientKey";
 
 type Member = { id: number; displayName: string; role: string; hardcore: boolean };
 
@@ -14,14 +15,24 @@ export default function HostLobbyPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		const payload = {
+			code: String(roomCode).toUpperCase(),
+			displayName: "Host",
+			role: "HOST" as const,
+			hardcore: false,
+			clientKey: getClientKey(),
+		};
 		// Join as HOST (backend should create or reuse host member)
-		socket.emit("room:join", { code: roomCode, displayName: "Host", role: "HOST" }, (res: any) => {
-			if (!res?.ok) setError(res?.message || "Failed to join as host");
+		socket.emit("room:join", payload, (res: any) => {
+			if (!res?.ok) {
+				console.error("room:join failed", res);
+				setError(res?.message || "Failed to join as host");
+			}
 		});
 
-		const onRoomUpdate = (payload: any) => {
-			if (payload?.phase) setPhase(payload.phase);
-			if (payload?.members) setMembers(payload.members);
+		const onRoomUpdate = (p: any) => {
+			if (p?.phase) setPhase(p.phase);
+			if (Array.isArray(p?.members)) setMembers(p.members);
 		};
 
 		socket.on("room:update", onRoomUpdate);

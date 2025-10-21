@@ -33,12 +33,6 @@ export default function GamePage() {
 			<h1 className="text-2xl font-semibold">Room {roomCode}</h1>
 			<p>Phase: {phase}</p>
 			<p>Song index: {currentIndex}</p>
-
-			<div className="flex gap-2">
-				<button className="rounded-xl border px-4 py-3 hover:bg-black/5" onClick={lockGuess}>
-					Lock Guess
-				</button>
-			</div>
 		</main>
 	);
 }
