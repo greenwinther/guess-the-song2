@@ -6,3 +6,4 @@ export * from "./schema/playlist";
 export * from "./schema/guesses";
 export * from "./schema/theme";
 export * from "./schema/scores";
+export * from "./schema/roomEvents";
