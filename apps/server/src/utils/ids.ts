@@ -1,6 +1,8 @@
 // src/utils/ids.ts
 import { randomUUID, randomBytes } from "crypto";
 
+export const ROOM_CODE_LENGTH = 4; // ← set your desired length here
+
 /** Stable member/session id (store in localStorage client-side). */
 export function newMemberId(): string {
 	try {
@@ -34,7 +36,7 @@ export function shortId(prefix = "id"): string {
 }
 
 /** Validate a room code against our alphabet/length. */
-export function isValidRoomCode(code: string, length = 6): boolean {
+export function isValidRoomCode(code: string, length = ROOM_CODE_LENGTH): boolean {
 	const re = new RegExp(`^[${ROOM_ALPHABET}]{${length}}$`);
 	return re.test(code);
 }
