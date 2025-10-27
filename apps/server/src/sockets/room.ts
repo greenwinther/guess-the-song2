@@ -1,38 +1,42 @@
+// src/sockets/room.ts
 import type { Server, Socket } from "socket.io";
-import { createRoomSchema, joinRoomSchema } from "./validators";
-import { createRoomService, joinRoomService } from "../services/room";
-import { socketToMember } from "./presence";
-import { roomMembers } from "../db";
-import { db } from "../db/db";
-import { eq } from "drizzle-orm";
+import { createRoom, getRoom, joinRoom, markDisconnected, assignHost } from "../store/roomStore";
+import { toPublicRoomState } from "../logic/publicState";
+import { Ack, ackOk } from "../utils/ack";
 
-export function registerRoomSockets(io: Server) {
-	io.on("connection", (socket: Socket) => {
-		socket.on("room:create", async (payload, cb) => {
-			try {
-				const data = createRoomSchema.parse(payload ?? {});
-				const room = await createRoomService(data);
-				cb?.({ ok: true, room });
-			} catch (err: any) {
-				cb?.({ ok: false, error: err.message ?? "CREATE_FAILED" });
-			}
-		});
+export function register(io: Server, socket: Socket) {
+	socket.on("room:create", ({ code }: { code: string }, ack?: Ack) => {
+		const room = createRoom(code);
+		ackOk(ack, { ok: true, room: toPublicRoomState(room) });
+	});
 
-		socket.on("room:join", async (payload, cb) => {
-			try {
-				const data = joinRoomSchema.parse(payload ?? {});
-				const { room, member } = await joinRoomService(data);
-				// join socket.io room for broadcasts
-				socket.join(`room:${room.code}`);
-				socketToMember.set(socket.id, { roomCode: room.code, memberId: member.id });
-				cb?.({ ok: true, room, member });
-				// notify others
-				socket.to(`room:${room.code}`).emit("room:member-joined", { member });
-				await db.update(roomMembers).set({ isActive: true }).where(eq(roomMembers.id, member.id));
-				io.to(`room:${room.code}`).emit("member:presence", { memberId: member.id, isActive: true });
-			} catch (err: any) {
-				cb?.({ ok: false, error: err.message ?? "JOIN_FAILED" });
-			}
-		});
+	socket.on(
+		"room:join",
+		({ code, name, memberId }: { code: string; name: string; memberId?: string }, ack?: Ack) => {
+			const { room, member } = joinRoom(code, name, memberId);
+			socket.join(code);
+			socket.data.roomCode = code;
+			socket.data.memberId = member.id;
+
+			io.to(code).emit("room:state", toPublicRoomState(room));
+			ackOk(ack, { ok: true, memberId: member.id, room: toPublicRoomState(room) });
+		}
+	);
+
+	socket.on("host:assign", ({ targetId }: { targetId: string }, ack?: Ack) => {
+		const code = socket.data.roomCode,
+			me = socket.data.memberId;
+		const ok = code && me ? assignHost(code, me, targetId) : false;
+		if (ok) io.to(code!).emit("room:state", toPublicRoomState(getRoom(code!)!));
+		ackOk(ack, { ok });
+	});
+
+	socket.on("disconnect", () => {
+		const code = socket.data.roomCode,
+			me = socket.data.memberId;
+		if (!code || !me) return;
+		markDisconnected(code, me);
+		const room = getRoom(code);
+		if (room) io.to(code).emit("room:state", toPublicRoomState(room));
 	});
 }
