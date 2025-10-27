@@ -1,5 +1,4 @@
-// ID utilities for rooms & members, with no external deps.
-
+// src/utils/ids.ts
 import { randomUUID, randomBytes } from "crypto";
 
 /** Stable member/session id (store in localStorage client-side). */
@@ -12,7 +11,7 @@ export function newMemberId(): string {
 	}
 }
 
-/** Room codes like “K7X3QZ”. Omit ambiguous chars for readability. */
+/** Room codes like “K7X3”. Omit ambiguous chars for readability. */
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I, O, 0, 1
 
 export function randomString(len: number, alphabet = ROOM_ALPHABET): string {
@@ -22,8 +21,8 @@ export function randomString(len: number, alphabet = ROOM_ALPHABET): string {
 	return out;
 }
 
-/** Create a human-friendly room code (default length 6). */
-export function newRoomCode(length = 6): string {
+/** Create a human-friendly room code (default length 4). */
+export function newRoomCode(length = 4): string {
 	return randomString(length);
 }
 
