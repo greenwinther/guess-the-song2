@@ -1,58 +1,38 @@
+// src/sockets/theme.ts
 import type { Server, Socket } from "socket.io";
-import { z } from "zod";
-import { upsertThemeAttemptService, lockThemeAttemptService } from "../services/theme";
-import { getScoresService } from "../services/scores";
+import { getRoom } from "../store/roomStore";
+import { setTheme, trySolveTheme } from "../logic/theme";
+import { Ack, ackErr, ackOk } from "../utils/ack";
+import { Room } from "../types";
 
-const upsertSchema = z.object({
-	roomCode: z.string().trim().min(4),
-	playlistItemId: z.number().int().positive(),
-	guesserId: z.number().int().positive(),
-	text: z.string().trim().min(1).max(200),
-});
+function publicTheme(room: Room) {
+	return { revealed: room.theme.revealed, hints: room.theme.hints, solvedBy: room.theme.solvedBy };
+}
 
-const lockSchema = z.object({
-	roomCode: z.string().trim().min(4),
-	playlistItemId: z.number().int().positive(),
-	guesserId: z.number().int().positive(),
-});
+export function register(io: Server, socket: Socket) {
+	socket.on("theme:set", ({ theme, hints = [] }: { theme: string; hints?: string[] }, ack?: Ack) => {
+		const room = getRoom(socket.data.roomCode!);
+		const me = room?.members.get(socket.data.memberId!);
+		if (!room || !me?.isHost) return ackErr(ack, "NOT_HOST");
+		setTheme(room, theme, hints);
+		io.to(room.code).emit("theme:state", publicTheme(room));
+		ackOk(ack, { ok: true });
+	});
 
-export function registerThemeSockets(io: Server) {
-	io.on("connection", (socket: Socket) => {
-		socket.on("themeAttempt:upsert", async (payload, cb) => {
-			try {
-				const data = upsertSchema.parse(payload ?? {});
-				const { attempt } = await upsertThemeAttemptService(data);
-				// Only notify the caller (others don’t need to see the text)
-				socket.emit("themeAttempt:updated", {
-					playlistItemId: attempt.playlistItemId,
-					guesserId: attempt.guesserId,
-				});
-				cb?.({ ok: true, attempt });
-			} catch (e: any) {
-				cb?.({ ok: false, error: e?.message ?? "THEME_UPSERT_FAILED" });
-			}
-		});
+	socket.on("theme:reveal", (_: {}, ack?: Ack) => {
+		const room = getRoom(socket.data.roomCode!);
+		const me = room?.members.get(socket.data.memberId!);
+		if (!room || !me?.isHost) return ackErr(ack, "NOT_HOST");
+		room.theme.revealed = true;
+		io.to(room.code).emit("theme:state", publicTheme(room));
+		ackOk(ack, { ok: true });
+	});
 
-		socket.on("themeAttempt:lock", async (payload, cb) => {
-			try {
-				const data = lockSchema.parse(payload ?? {});
-				const { attempt } = await lockThemeAttemptService(data);
-				io.to(`room:${data.roomCode}`).emit("themeAttempt:locked", {
-					playlistItemId: attempt.playlistItemId,
-					guesserId: attempt.guesserId,
-					lockedAt: attempt.lockedAt,
-				});
-
-				// If that lock solved the theme & awarded points, refresh leaderboard
-				if (attempt.isCorrect) {
-					const scores = await getScoresService(data.roomCode);
-					io.to(`room:${data.roomCode}`).emit("scores:updated", { scores });
-				}
-
-				cb?.({ ok: true, attempt });
-			} catch (e: any) {
-				cb?.({ ok: false, error: e?.message ?? "THEME_LOCK_FAILED" });
-			}
-		});
+	socket.on("theme:guess", ({ guess }: { guess: string }, ack?: Ack) => {
+		const room = getRoom(socket.data.roomCode!);
+		if (!room) return ackErr(ack, "NO_ROOM");
+		const res = trySolveTheme(room, socket.data.memberId!, guess);
+		io.to(room.code).emit("theme:state", publicTheme(room));
+		ackOk(ack, { ok: true, correct: res.correct });
 	});
 }
