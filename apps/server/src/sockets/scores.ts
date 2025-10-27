@@ -1,19 +1,15 @@
+// src/sockets/scores.ts
 import type { Server, Socket } from "socket.io";
-import { z } from "zod";
-import { getScoresService } from "../services/scores";
+import { getRoom } from "../store/roomStore";
+import { computeScores } from "../logic/scoring";
+import { Ack, ackErr, ackOk } from "../utils/ack";
 
-const scoresSchema = z.object({ roomCode: z.string().trim().min(4) });
-
-export function registerScoreSockets(io: Server) {
-	io.on("connection", (socket: Socket) => {
-		socket.on("scores:get", async (payload, cb) => {
-			try {
-				const { roomCode } = scoresSchema.parse(payload ?? {});
-				const scores = await getScoresService(roomCode);
-				cb?.({ ok: true, scores });
-			} catch (e: any) {
-				cb?.({ ok: false, error: e?.message ?? "SCORES_GET_FAILED" });
-			}
-		});
+export function register(io: Server, socket: Socket) {
+	socket.on("score:compute", (ack?: Ack) => {
+		const room = getRoom(socket.data.roomCode!);
+		if (!room) return ackErr(ack, "NO_ROOM");
+		const sb = computeScores(room);
+		io.to(room.code).emit("score:update", sb);
+		ackOk(ack, { ok: true, scoreboard: sb });
 	});
 }
