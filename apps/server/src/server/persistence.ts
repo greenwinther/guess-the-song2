@@ -1,8 +1,9 @@
 // src/server/persistence.ts
 import fs from "fs";
 import path from "path";
-import type { Room, Member } from "../types";
-import { iterRooms, _gcDelete, reviveRoomIntoStore } from "../store/roomStore";
+import type { Room, Member } from "../types/index.js";
+import { iterRooms, _gcDelete, reviveRoomIntoStore } from "../store/roomStore.js";
+import { validateRoomJson } from "./validation.js";
 
 // Where to store the JSON file
 const DATA_DIR = path.resolve(process.cwd(), "data");
@@ -12,33 +13,37 @@ const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
 function roomToJSON(room: Room) {
 	return {
 		...room,
-		members: [...room.members.values()], // Map -> array
-		revealedSubmissionIds: [...room.revealedSubmissionIds], // Set -> array
+		members: [...room.members.values()],
+		revealedSubmissionIds: [...room.revealedSubmissionIds],
 	};
-}
-
-// Convert plain JSON → in-memory structures
-function jsonToRoom(json: any): Room {
-	const room: Room = {
-		...json,
-		members: new Map<string, Member>(json.members.map((m: Member) => [m.id, m])),
-		revealedSubmissionIds: new Set<string>(json.revealedSubmissionIds ?? []),
-	};
-	return room;
 }
 
 export async function loadRoomsFromDisk() {
 	try {
 		if (!fs.existsSync(ROOMS_FILE)) return;
 		const raw = await fs.promises.readFile(ROOMS_FILE, "utf8");
-		const parsed = JSON.parse(raw) as any[];
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return;
+
 		const now = Date.now();
+		let loaded = 0,
+			skipped = 0,
+			expired = 0;
+
 		for (const r of parsed) {
-			// Skip expired
-			if (typeof r.expiresAt === "number" && r.expiresAt < now) continue;
-			reviveRoomIntoStore(jsonToRoom(r));
+			const room = validateRoomJson(r);
+			if (!room) {
+				skipped++;
+				continue;
+			}
+			if (room.expiresAt < now) {
+				expired++;
+				continue;
+			}
+			reviveRoomIntoStore(room);
+			loaded++;
 		}
-		// After loading, run one GC pass to be safe
+		console.log(`[persistence] rooms loaded=${loaded}, expired=${expired}, skipped=${skipped}`);
 		await gcAndPersist();
 	} catch (e) {
 		console.error("[persistence] load failed:", e);
@@ -48,15 +53,11 @@ export async function loadRoomsFromDisk() {
 export async function persistRoomsToDisk() {
 	try {
 		if (!fs.existsSync(DATA_DIR)) await fs.promises.mkdir(DATA_DIR, { recursive: true });
-
 		const list: any[] = [];
-		for (const [, room] of iterRooms()) {
-			list.push(roomToJSON(room));
-		}
-
+		for (const [, room] of iterRooms()) list.push(roomToJSON(room));
 		const tmp = `${ROOMS_FILE}.tmp`;
 		await fs.promises.writeFile(tmp, JSON.stringify(list, null, 2), "utf8");
-		await fs.promises.rename(tmp, ROOMS_FILE); // atomic replace
+		await fs.promises.rename(tmp, ROOMS_FILE);
 	} catch (e) {
 		console.error("[persistence] save failed:", e);
 	}
