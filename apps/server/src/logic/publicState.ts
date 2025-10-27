@@ -15,10 +15,8 @@ export function toPublicRoomState(room: Room) {
 		})),
 		submissions: room.submissions,
 		revealedSubmissionIds: [...room.revealedSubmissionIds],
-		theme: {
-			revealed: room.theme.revealed,
-			hints: room.theme.hints,
-			solvedBy: room.theme.solvedBy,
-		},
+		theme: { revealed: room.theme.revealed, hints: room.theme.hints, solvedBy: room.theme.solvedBy },
+		saved: room.saved,
+		expiresAt: room.expiresAt,
 	};
 }
