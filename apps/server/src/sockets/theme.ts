@@ -1,10 +1,10 @@
 // src/sockets/theme.ts
 import type { Server, Socket } from "socket.io";
-import { setTheme, trySolveTheme } from "../logic/theme";
-import { Ack, ackOk } from "../utils/ack";
-import type { Room } from "../types";
-import { requireHost, requireMember, requireRoom /*, requirePhase*/ } from "../logic/guards";
-import type { ThemeSetPayload, ThemeGuessPayload } from "./payloads";
+import { setTheme, trySolveTheme } from "../logic/theme.js";
+import { Ack, ackOk } from "../utils/ack.js";
+import { requireHost, requireMember, requireRoom /*, requirePhase*/ } from "../logic/guards.js";
+import type { ThemeSetPayload, ThemeGuessPayload } from "./payloads.js";
+import { Room } from "../types/index.js";
 
 function publicTheme(room: Room) {
 	return { revealed: room.theme.revealed, hints: room.theme.hints, solvedBy: room.theme.solvedBy };

@@ -8,11 +8,11 @@ import {
 	assignHost,
 	markSaved,
 	markUnsaved,
-} from "../store/roomStore";
-import { toPublicRoomState } from "../logic/publicState";
-import { Ack, ackErr, ackOk } from "../utils/ack";
-import { requireHost, requireRoom } from "../logic/guards";
-import type { RoomCreatePayload, RoomJoinPayload, HostAssignPayload } from "./payloads";
+} from "../store/roomStore.js";
+import { toPublicRoomState } from "../logic/publicState.js";
+import { Ack, ackErr, ackOk } from "../utils/ack.js";
+import { requireHost, requireRoom } from "../logic/guards.js";
+import type { RoomCreatePayload, RoomJoinPayload, HostAssignPayload } from "./payloads.js";
 
 export function register(io: Server, socket: Socket) {
 	socket.on("room:create", ({ code }: RoomCreatePayload, ack?: Ack) => {

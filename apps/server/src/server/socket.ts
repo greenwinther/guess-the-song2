@@ -1,12 +1,12 @@
 // src/server/socket.ts
 import type { Server, Socket } from "socket.io";
-import * as roomHandlers from "../sockets/room";
-import * as playerHandlers from "../sockets/player";
-import * as submissionsHandlers from "../sockets/submissions";
-import * as gameHandlers from "../sockets/game";
-import * as guessesHandlers from "../sockets/guesses";
-import * as themeHandlers from "../sockets/theme";
-import * as scoresHandlers from "../sockets/scores";
+import * as roomHandlers from "../sockets/room.js";
+import * as playerHandlers from "../sockets/player.js";
+import * as submissionsHandlers from "../sockets/submissions.js";
+import * as gameHandlers from "../sockets/game.js";
+import * as guessesHandlers from "../sockets/guesses.js";
+import * as themeHandlers from "../sockets/theme.js";
+import * as scoresHandlers from "../sockets/scores.js";
 
 export function registerSocketHandlers(io: Server) {
 	io.on("connection", (socket: Socket) => {

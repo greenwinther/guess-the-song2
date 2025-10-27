@@ -1,9 +1,9 @@
 // src/sockets/game.ts
 import type { Server, Socket } from "socket.io";
-import { toPublicRoomState } from "../logic/publicState";
-import { Ack, ackOk } from "../utils/ack";
-import { requireHost, requireRoom } from "../logic/guards";
-import { GameSetIndexPayload, GameSetPhasePayload } from "./payloads";
+import { GameSetIndexPayload, GameSetPhasePayload } from "./payloads.js";
+import { Ack, ackOk } from "../utils/ack.js";
+import { requireHost, requireRoom } from "../logic/guards.js";
+import { toPublicRoomState } from "../logic/publicState.js";
 
 export function register(io: Server, socket: Socket) {
 	socket.on("game:setPhase", ({ phase }: GameSetPhasePayload, ack?: Ack) => {

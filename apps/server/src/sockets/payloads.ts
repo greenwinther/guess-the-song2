@@ -1,5 +1,5 @@
 // src/sockets/payloads.ts
-export type GameSetPhasePayload = { phase: import("../types").Phase };
+export type GameSetPhasePayload = { phase: import("../types/index.js").Phase };
 export type GameSetIndexPayload = { index: number };
 
 export type GuessSubmitPayload = {
@@ -14,7 +14,7 @@ export type RoomCreatePayload = { code: string };
 export type RoomJoinPayload = { code: string; name: string; memberId?: string };
 export type HostAssignPayload = { targetId: string };
 
-export type SubmissionAddPayload = import("../types").Submission;
+export type SubmissionAddPayload = import("../types/index.js").Submission;
 export type SubmissionRemovePayload = { id: string };
 
 export type ThemeSetPayload = { theme: string; hints?: string[] };

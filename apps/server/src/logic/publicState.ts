@@ -1,5 +1,5 @@
 // src/logic/publicState.ts
-import type { Room } from "../types";
+import type { Room } from "../types/index.js";
 
 export function toPublicRoomState(room: Room) {
 	return {

@@ -1,9 +1,9 @@
 // src/sockets/player.ts
 import type { Server, Socket } from "socket.io";
-import { toPublicRoomState } from "../logic/publicState";
-import { requireMember, requireRoom } from "../logic/guards";
-import { Ack, ackOk } from "../utils/ack";
-import type { PlayerRenamePayload, PlayerSetHardcorePayload } from "./payloads";
+import { toPublicRoomState } from "../logic/publicState.js";
+import { requireMember, requireRoom } from "../logic/guards.js";
+import type { PlayerRenamePayload, PlayerSetHardcorePayload } from "./payloads.ts";
+import { Ack, ackOk } from "../utils/ack.js";
 
 export function register(io: Server, socket: Socket) {
 	socket.on("player:setHardcore", ({ hardcore }: PlayerSetHardcorePayload, ack?: Ack) => {

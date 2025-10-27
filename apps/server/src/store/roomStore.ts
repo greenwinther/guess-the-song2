@@ -1,7 +1,7 @@
 // src/store/roomStore.ts
 import { randomUUID } from "crypto";
-import type { Room, Member } from "../types";
-import { isValidRoomCode } from "../utils/ids";
+import { isValidRoomCode } from "../utils/ids.js";
+import { Member, Room } from "../types/index.js";
 
 const rooms = new Map<string, Room>();
 const DAY = 24 * 60 * 60 * 1000;

@@ -1,8 +1,8 @@
 // src/sockets/scores.ts
 import type { Server, Socket } from "socket.io";
-import { computeScores } from "../logic/scoring";
-import { Ack, ackOk } from "../utils/ack";
-import { requireRoom } from "../logic/guards";
+import { computeScores } from "../logic/scoring.js";
+import { Ack, ackOk } from "../utils/ack.js";
+import { requireRoom } from "../logic/guards.js";
 
 export function register(io: Server, socket: Socket) {
 	socket.on("score:compute", (ack?: Ack) => {
