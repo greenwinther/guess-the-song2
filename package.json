@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "dev": "npm --workspace apps/server run dev",
+    "dev:client": "npm --workspace apps/server run dev:client",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:web\"",
     "build": "npm --workspace apps/server run build",
@@ -15,6 +16,8 @@
     "drizzle:push": "npm --workspace apps/server run drizzle:push"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
