@@ -1,22 +1,23 @@
 // src/sockets/submissions.ts
 import type { Server, Socket } from "socket.io";
-import { getRoom } from "../store/roomStore";
-import { Ack, ackErr, ackOk } from "../utils/ack";
+import { Ack, ackOk } from "../utils/ack";
+import { requireRoom } from "../logic/guards";
+import type { SubmissionAddPayload, SubmissionRemovePayload } from "./payloads";
 
 export function register(io: Server, socket: Socket) {
-	socket.on("submission:add", (payload, ack?: Ack) => {
-		const room = getRoom(socket.data.roomCode!);
-		if (!room) return ackErr(ack, "NO_ROOM");
+	socket.on("submission:add", (payload: SubmissionAddPayload, ack?: Ack) => {
+		const room = requireRoom(socket, ack);
+		if (!room) return;
 		room.submissions.push(payload);
 		io.to(room.code).emit("submission:list", room.submissions);
-		ackOk(ack, { ok: true });
+		ackOk(ack);
 	});
 
-	socket.on("submission:remove", ({ id }: { id: string }, ack?: Ack) => {
-		const room = getRoom(socket.data.roomCode!);
-		if (!room) return ackErr(ack, "NO_ROOM");
+	socket.on("submission:remove", ({ id }: SubmissionRemovePayload, ack?: Ack) => {
+		const room = requireRoom(socket, ack);
+		if (!room) return;
 		room.submissions = room.submissions.filter((s) => s.id !== id);
 		io.to(room.code).emit("submission:list", room.submissions);
-		ackOk(ack, { ok: true });
+		ackOk(ack);
 	});
 }
