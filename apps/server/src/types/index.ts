@@ -82,5 +82,7 @@ export interface Room {
 	};
 
 	createdAt: number;
+	expiresAt: number; // unix ms
+	saved: boolean; // false = 1-day TTL, true = 7-day TTL
 	hostLockAll?: boolean;
 }
