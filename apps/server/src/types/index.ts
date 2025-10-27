@@ -7,6 +7,7 @@ export interface Member {
 	isHost: boolean;
 	connected: boolean;
 	hardcore?: boolean;
+	lastSeen?: number; // unix ms
 }
 
 export interface Submission {
