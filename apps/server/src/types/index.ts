@@ -13,7 +13,7 @@ export interface Member {
 export interface Submission {
 	id: string; // e.g. youtube videoId
 	title: string;
-	submitterName: string; // member who submitted
+	submitterName: string;
 }
 
 export interface Guess {
