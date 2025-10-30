@@ -44,6 +44,29 @@ export function register(io: Server, socket: Socket) {
 		return ackOk(ack, { assignedTo: targetId });
 	});
 
+	socket.on("control:assign", ({ targetId }: { targetId: string }, ack?: Ack) => {
+		const room = requireRoom(socket, ack);
+		if (!room) return;
+		const me = requireHost(socket, room, ack);
+		if (!me) return;
+		if (!room.members.has(targetId)) return ackErr(ack, "NO_SUCH_MEMBER");
+		room.controllerId = targetId;
+		io.to(room.code).emit("room:state", toPublicRoomState(room));
+		ackOk(ack, { controllerId: targetId });
+	});
+
+	// optional: let someone claim controller with the hostKey
+	socket.on("control:claim", ({ hostKey }: { hostKey: string }, ack?: Ack) => {
+		const room = requireRoom(socket, ack);
+		if (!room) return;
+		const meId = socket.data.memberId!;
+		if (hostKey !== room.hostKey) return ackErr(ack, "BAD_KEY");
+		if (!room.members.has(meId)) return ackErr(ack, "NOT_MEMBER");
+		room.controllerId = meId;
+		io.to(room.code).emit("room:state", toPublicRoomState(room));
+		ackOk(ack, { controllerId: meId });
+	});
+
 	socket.on("disconnect", () => {
 		const code = socket.data.roomCode;
 		const me = socket.data.memberId;

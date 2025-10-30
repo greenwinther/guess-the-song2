@@ -1,13 +1,6 @@
 // src/logic/theme.ts
 import type { Room } from "../types/index.js";
-
-export const normalize = (s: string) =>
-	s
-		.toLowerCase()
-		.replace(/\s+/g, " ")
-		.trim()
-		.normalize("NFKD")
-		.replace(/[\u0300-\u036f]/g, "");
+import { normalize } from "../utils/text.js";
 
 export function setTheme(room: Room, theme: string, hints: string[] = []) {
 	room.theme.currentTheme = theme;
@@ -15,11 +8,25 @@ export function setTheme(room: Room, theme: string, hints: string[] = []) {
 	room.theme.hints = hints;
 	room.theme.revealed = false;
 	room.theme.solvedBy = [];
+	room.theme.attemptedBy = new Set<string>();
 }
 
 export function trySolveTheme(room: Room, memberId: string, guess: string) {
-	if (!room.theme.currentTheme) return { correct: false };
-	const correct = normalize(guess) === room.theme.normalizedTheme;
-	if (correct && !room.theme.solvedBy.includes(memberId)) room.theme.solvedBy.push(memberId);
-	return { correct };
+	if (!room.theme.currentTheme) return { correct: false, locked: false };
+	if (!room.theme.attemptedBy) room.theme.attemptedBy = new Set<string>();
+
+	// one attempt total per player
+	if (room.theme.attemptedBy.has(memberId)) {
+		return { correct: false, locked: true };
+	}
+	room.theme.attemptedBy.add(memberId);
+
+	const correct = normalize(guess) === (room.theme.normalizedTheme ?? "");
+	if (correct) {
+		// only record once
+		if (!room.theme.solvedBy.some((x) => x.memberId === memberId)) {
+			room.theme.solvedBy.push({ memberId, atIndex: Math.max(0, room.currentIndex) });
+		}
+	}
+	return { correct, locked: true };
 }

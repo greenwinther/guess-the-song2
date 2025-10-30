@@ -58,3 +58,17 @@ export function requirePhase(room: Room, allowed: Phase[] | Phase, ack?: Ack) {
 export function allowGuessing(room: Room): boolean {
 	return room.phase === "GUESSING" || (room.phase === "RECAP" && room.rules.allowGuessingInRecap);
 }
+
+export function requireController(socket: Socket, room: Room, ack?: Ack) {
+	const me = socket.data.memberId;
+	if (me && (room.controllerId === me || room.members.get(me)?.isHost)) return me;
+	return ackErr(ack, "NOT_CONTROLLER"), null;
+}
+
+// convenience:
+export function requireHostOrController(socket: Socket, room: Room, ack?: Ack) {
+	const me = socket.data.memberId;
+	const m = me ? room.members.get(me) : undefined;
+	if (m?.isHost || room.controllerId === me) return m ?? null;
+	return ackErr(ack, "NOT_ALLOWED"), null;
+}
