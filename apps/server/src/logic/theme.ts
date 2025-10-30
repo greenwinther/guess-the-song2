@@ -1,5 +1,5 @@
 // src/logic/theme.ts
-import type { Room } from "../types";
+import type { Room } from "../types/index.js";
 
 export const normalize = (s: string) =>
 	s

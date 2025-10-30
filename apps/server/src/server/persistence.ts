@@ -1,7 +1,7 @@
 // src/server/persistence.ts
 import fs from "fs";
 import path from "path";
-import type { Room, Member } from "../types/index.js";
+import type { Room } from "../types/index.js";
 import { iterRooms, _gcDelete, reviveRoomIntoStore } from "../store/roomStore.js";
 import { validateRoomJson } from "./validation.js";
 

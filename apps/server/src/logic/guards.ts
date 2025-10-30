@@ -1,7 +1,7 @@
 import type { Socket } from "socket.io";
-import type { Phase, Room } from "../types";
-import { getRoom } from "../store/roomStore";
-import { ackErr, Ack } from "../utils/ack";
+import type { Phase, Room } from "../types/index.js";
+import { getRoom } from "../store/roomStore.js";
+import { ackErr, Ack } from "../utils/ack.js";
 
 /** Ensure the socket has a bound room and that room exists. */
 export function requireRoom(socket: Socket, ack?: Ack): Room | null {
