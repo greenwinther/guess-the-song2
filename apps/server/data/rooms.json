@@ -1,1 +1,61 @@
-[]
+[
+  {
+    "code": "ABCD",
+    "phase": "LOBBY",
+    "currentIndex": 0,
+    "members": [
+      {
+        "id": "4bee98b3-cf98-4de5-9aa7-95fe767d3168",
+        "name": "Dennis",
+        "isHost": false,
+        "connected": false
+      },
+      {
+        "id": "8f141a4c-89e1-45f4-91c7-8f37ca62ab43",
+        "name": "Dennis",
+        "isHost": false,
+        "connected": false
+      }
+    ],
+    "submissions": [
+      {
+        "id": "yt123",
+        "title": "Song A",
+        "submitterId": "4bee98b3-cf98-4de5-9aa7-95fe767d3168"
+      },
+      {
+        "id": "yt123",
+        "title": "Song A",
+        "submitterId": "8f141a4c-89e1-45f4-91c7-8f37ca62ab43"
+      }
+    ],
+    "guesses": [],
+    "revealedSubmissionIds": [],
+    "theme": {
+      "currentTheme": "Animals",
+      "normalizedTheme": "animals",
+      "hints": [
+        "mammal",
+        "nocturnal"
+      ],
+      "revealed": true,
+      "solvedBy": [
+        "4bee98b3-cf98-4de5-9aa7-95fe767d3168",
+        "8f141a4c-89e1-45f4-91c7-8f37ca62ab43"
+      ]
+    },
+    "rules": {
+      "allowGuessingInRecap": true,
+      "maxOneGuessPerSong": true,
+      "score": {
+        "correctPerSong": 1,
+        "themeSolveFirst": 2,
+        "themeSolveLater": 1,
+        "hardcoreMultiplier": 1.5
+      }
+    },
+    "createdAt": 1761833270263,
+    "expiresAt": 1762438174881,
+    "saved": true
+  }
+]

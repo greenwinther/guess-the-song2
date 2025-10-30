@@ -1,5 +1,5 @@
 // src/logic/scoring.ts
-import type { Room, ScoreBoard, ScoreRow } from "../types";
+import type { Room, ScoreBoard, ScoreRow } from "../types/index.js";
 
 export function computeScores(room: Room): ScoreBoard {
 	const rows = new Map<string, ScoreRow>();
@@ -12,7 +12,7 @@ export function computeScores(room: Room): ScoreBoard {
 	for (const g of room.guesses) {
 		const sub = room.submissions.find((s) => s.id === g.submissionId);
 		if (!sub) continue;
-		if (g.guessedSubmitterId === sub.submitterId) {
+		if (g.guessedSubmitterName === sub.submitterName) {
 			ensure(g.memberId).correctGuesses += room.rules.score.correctPerSong;
 		}
 	}

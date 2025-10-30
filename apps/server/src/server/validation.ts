@@ -33,20 +33,19 @@ function validateSubmission(raw: any): Submission | null {
 	if (!isObj(raw)) return null;
 	const id = asString(raw.id);
 	const title = asString(raw.title);
-	const submitterId = asString(raw.submitterId);
-	const durationSec = raw.durationSec === undefined ? undefined : asNum(raw.durationSec, 0);
-	if (!id || !title || !submitterId) return null;
-	return { id, title, submitterId, durationSec };
+	const submitterName = asString(raw.submitterName);
+	if (!id || !title || !submitterName) return null;
+	return { id, title, submitterName };
 }
 
 function validateGuess(raw: any): Guess | null {
 	if (!isObj(raw)) return null;
 	const memberId = asString(raw.memberId);
 	const submissionId = asString(raw.submissionId);
-	const guessedSubmitterId = asString(raw.guessedSubmitterId);
+	const guessedSubmitterName = asString(raw.guessedSubmitterName);
 	const at = raw.at === undefined ? undefined : asNum(raw.at, 0);
-	if (!memberId || !submissionId || !guessedSubmitterId) return null;
-	return { memberId, submissionId, guessedSubmitterId, at };
+	if (!memberId || !submissionId || !guessedSubmitterName) return null;
+	return { memberId, submissionId, guessedSubmitterName, at };
 }
 
 function validateTheme(raw: any): ThemeState {

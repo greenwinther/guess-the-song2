@@ -16,22 +16,15 @@ socket.on("connect", () => {
 	socket.emit("room:join", { code: "ABCD", name: "Dennis" }, (resp: any) => {
 		console.log("[client] join ack:", resp);
 
-		socket.emit(
-			"submission:add",
-			{ id: "yt123", title: "Song A", submitterId: resp.memberId },
-			(r: any) => {
-				console.log("[client] add sub ack:", r);
+		socket.emit("guess:submit", { submissionId: "yt123", guessedSubmitterName: "Sammy" }, (g: any) => {
+			console.log("[client] guess ack:", g);
 
-				socket.emit("room:save", {}, (r: any) => {
-					console.log("[client] save ack:", r);
+			socket.emit("score:compute", (s: any) => {
+				console.log("[client] score ack:", s);
+				process.exit(0);
+			});
+		});
 
-					socket.emit("score:compute", (r: any) => {
-						console.log("[client] score ack:", r);
-						process.exit(0);
-					});
-				});
-			}
-		);
 		socket.emit("theme:set", { theme: "Animals", hints: ["mammal", "nocturnal"] }, (r: any) => {
 			console.log("[client] theme:set", r);
 			socket.emit("theme:guess", { guess: "Animals" }, (r2: any) => {

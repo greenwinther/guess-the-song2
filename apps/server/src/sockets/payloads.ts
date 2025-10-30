@@ -4,7 +4,7 @@ export type GameSetIndexPayload = { index: number };
 
 export type GuessSubmitPayload = {
 	submissionId: string;
-	guessedSubmitterId: string;
+	guessedSubmitterName: string;
 };
 
 export type PlayerSetHardcorePayload = { hardcore: boolean };
@@ -14,7 +14,11 @@ export type RoomCreatePayload = { code: string };
 export type RoomJoinPayload = { code: string; name: string; memberId?: string };
 export type HostAssignPayload = { targetId: string };
 
-export type SubmissionAddPayload = import("../types/index.js").Submission;
+export type SubmissionAddPayload = {
+	id: string;
+	title: string;
+	submitterName: string;
+};
 export type SubmissionRemovePayload = { id: string };
 
 export type ThemeSetPayload = { theme: string; hints?: string[] };

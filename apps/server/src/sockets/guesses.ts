@@ -16,7 +16,7 @@ export function register(io: Server, socket: Socket) {
 		const payload = {
 			memberId: me.id,
 			submissionId: guess.submissionId,
-			guessedSubmitterId: guess.guessedSubmitterId,
+			guessedSubmitterName: guess.guessedSubmitterName,
 			at: Date.now(),
 		};
 
