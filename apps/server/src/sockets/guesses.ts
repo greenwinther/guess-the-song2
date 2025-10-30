@@ -17,11 +17,12 @@ export function register(io: Server, socket: Socket) {
 			memberId: me.id,
 			submissionId: guess.submissionId,
 			guessedSubmitterName: guess.guessedSubmitterName,
+			detailGuess: guess.detailGuess,
 			at: Date.now(),
 		};
 
 		const idx = room.guesses.findIndex(
-			(x: any) => x.memberId === me.id && x.submissionId === guess.submissionId
+			(x) => x.memberId === me.id && x.submissionId === guess.submissionId
 		);
 		if (room.rules.maxOneGuessPerSong) {
 			if (idx >= 0) room.guesses[idx] = payload;

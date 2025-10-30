@@ -15,6 +15,10 @@ function roomToJSON(room: Room) {
 		...room,
 		members: [...room.members.values()],
 		revealedSubmissionIds: [...room.revealedSubmissionIds],
+		theme: {
+			...room.theme,
+			attemptedBy: room.theme.attemptedBy ? [...room.theme.attemptedBy] : [],
+		},
 	};
 }
 

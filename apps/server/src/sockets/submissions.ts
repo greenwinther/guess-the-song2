@@ -9,7 +9,15 @@ export function register(io: Server, socket: Socket) {
 		const room = requireRoom(socket, ack);
 		if (!room) return;
 		room.submissions.push(payload);
-		io.to(room.code).emit("submission:list", room.submissions);
+		io.to(room.code).emit(
+			"submission:list",
+			room.submissions.map((s) => ({
+				id: s.id,
+				title: s.title,
+				submitterName: s.submitterName,
+				detailHint: s.detailHint ?? undefined,
+			}))
+		);
 		ackOk(ack);
 	});
 
