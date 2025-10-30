@@ -1,10 +1,10 @@
 // src/logic/theme.ts
 import type { Room } from "../types/index.js";
-import { normalize } from "../utils/text.js";
+import { normalizeRoomCode } from "../utils/ids.js";
 
 export function setTheme(room: Room, theme: string, hints: string[] = []) {
 	room.theme.currentTheme = theme;
-	room.theme.normalizedTheme = normalize(theme);
+	room.theme.normalizedTheme = normalizeRoomCode(theme);
 	room.theme.hints = hints;
 	room.theme.revealed = false;
 	room.theme.solvedBy = [];
@@ -21,7 +21,7 @@ export function trySolveTheme(room: Room, memberId: string, guess: string) {
 	}
 	room.theme.attemptedBy.add(memberId);
 
-	const correct = normalize(guess) === (room.theme.normalizedTheme ?? "");
+	const correct = normalizeRoomCode(guess) === (room.theme.normalizedTheme ?? "");
 	if (correct) {
 		// only record once
 		if (!room.theme.solvedBy.some((x) => x.memberId === memberId)) {

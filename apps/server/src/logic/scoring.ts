@@ -1,6 +1,6 @@
 // src/logic/scoring.ts
 import type { Room, ScoreBoard, ScoreRow } from "../types/index.js";
-import { normalize } from "../utils/text.js";
+import { normalizeRoomCode } from "../utils/ids.js";
 
 export function computeScores(room: Room): ScoreBoard {
 	const rows = new Map<string, ScoreRow>();
@@ -24,12 +24,16 @@ export function computeScores(room: Room): ScoreBoard {
 		if (!sub) continue;
 
 		// submitter name correctness
-		if (normalize(g.guessedSubmitterName) === normalize(sub.submitterName)) {
+		if (normalizeRoomCode(g.guessedSubmitterName) === normalizeRoomCode(sub.submitterName)) {
 			ensure(g.memberId).correctGuesses += sc.correctPerSong;
 		}
 
 		// detail correctness (if both provided)
-		if (sub.detail && g.detailGuess && normalize(g.detailGuess) === normalize(sub.detail)) {
+		if (
+			sub.detail &&
+			g.detailGuess &&
+			normalizeRoomCode(g.detailGuess) === normalizeRoomCode(sub.detail)
+		) {
 			ensure(g.memberId).detailCorrect += sc.detailCorrect;
 		}
 	}

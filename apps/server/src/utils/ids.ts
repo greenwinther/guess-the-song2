@@ -35,6 +35,14 @@ export function shortId(prefix = "id"): string {
 	return `${prefix}_${t}${r}`;
 }
 
+export function normalizeRoomCode(input?: string | null): string {
+	return String(input ?? "")
+		.toUpperCase()
+		.replace(/[^A-Z0-9]/g, "") // strip non-alnum
+		.replace(/[IO01]/g, (ch) => (({ I: "1", O: "0", "0": "0", "1": "1" } as any)[ch])) // optional: keep if you want
+		.trim();
+}
+
 /** Validate a room code against our alphabet/length. */
 export function isValidRoomCode(code: string, length = ROOM_CODE_LENGTH): boolean {
 	const re = new RegExp(`^[${ROOM_ALPHABET}]{${length}}$`);

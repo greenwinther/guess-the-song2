@@ -1,14 +1,13 @@
 // src/store/roomStore.ts
 import { randomUUID } from "crypto";
-import { isValidRoomCode, randomString } from "../utils/ids.js";
+import { isValidRoomCode, normalizeRoomCode, randomString } from "../utils/ids.js";
 import { Member, Room } from "../types/index.js";
-import { normalize } from "../utils/text.js";
 
 const rooms = new Map<string, Room>();
 const DAY = 24 * 60 * 60 * 1000;
 
 export const createRoom = (code: string): Room => {
-	const normalized = normalize(code);
+	const normalized = normalizeRoomCode(code);
 	if (!isValidRoomCode(normalized)) throw new Error(`Invalid room code: "${code}"`);
 	const now = Date.now();
 	const room: Room = {
@@ -45,10 +44,11 @@ export const createRoom = (code: string): Room => {
 	return room;
 };
 
-export const getRoom = (code?: string): Room | undefined => (code ? rooms.get(normalize(code)) : undefined);
+export const getRoom = (code?: string): Room | undefined =>
+	code ? rooms.get(normalizeRoomCode(code)) : undefined;
 
 export const joinRoom = (code: string, name: string, memberId?: string) => {
-	const normalized = normalize(code);
+	const normalized = normalizeRoomCode(code);
 	const room = rooms.get(normalized) ?? createRoom(normalized);
 
 	const id = memberId ?? randomUUID();
@@ -127,8 +127,8 @@ export function iterRooms(): IterableIterator<[string, Room]> {
 	return rooms.entries();
 }
 export function _gcDelete(code: string): boolean {
-	return rooms.delete(normalize(code));
+	return rooms.delete(normalizeRoomCode(code));
 }
 export function reviveRoomIntoStore(room: Room) {
-	rooms.set(normalize(room.code), room);
+	rooms.set(normalizeRoomCode(room.code), room);
 }
