@@ -2,14 +2,13 @@
 import { randomUUID } from "crypto";
 import { isValidRoomCode, randomString } from "../utils/ids.js";
 import { Member, Room } from "../types/index.js";
+import { normalize } from "../utils/text.js";
 
 const rooms = new Map<string, Room>();
 const DAY = 24 * 60 * 60 * 1000;
 
-const norm = (c: string) => c.trim().toUpperCase();
-
 export const createRoom = (code: string): Room => {
-	const normalized = norm(code);
+	const normalized = normalize(code);
 	if (!isValidRoomCode(normalized)) throw new Error(`Invalid room code: "${code}"`);
 	const now = Date.now();
 	const room: Room = {
@@ -46,10 +45,10 @@ export const createRoom = (code: string): Room => {
 	return room;
 };
 
-export const getRoom = (code?: string): Room | undefined => (code ? rooms.get(norm(code)) : undefined);
+export const getRoom = (code?: string): Room | undefined => (code ? rooms.get(normalize(code)) : undefined);
 
 export const joinRoom = (code: string, name: string, memberId?: string) => {
-	const normalized = norm(code);
+	const normalized = normalize(code);
 	const room = rooms.get(normalized) ?? createRoom(normalized);
 
 	const id = memberId ?? randomUUID();
@@ -74,13 +73,20 @@ export const markDisconnected = (code: string, memberId: string) => {
 
 	m.connected = false;
 
+	// Only hand over host if there is a *connected* alternative.
 	if (m.isHost) {
 		const next = [...room.members.values()].find((x) => x.connected && x.id !== memberId);
-		if (next) next.isHost = true;
-		m.isHost = false;
+		if (next) {
+			for (const mm of room.members.values()) mm.isHost = false;
+			next.isHost = true;
+		} else {
+			// No alternative → KEEP m as host even while disconnected
+			m.isHost = true;
+		}
 	}
 
-	// Do NOT delete here; GC will prune by expiresAt
+	// prune if everyone gone
+	if ([...room.members.values()].every((x) => !x.connected)) rooms.delete(code);
 };
 
 export const assignHost = (code: string, byId: string, targetId: string) => {
@@ -121,8 +127,8 @@ export function iterRooms(): IterableIterator<[string, Room]> {
 	return rooms.entries();
 }
 export function _gcDelete(code: string): boolean {
-	return rooms.delete(norm(code));
+	return rooms.delete(normalize(code));
 }
 export function reviveRoomIntoStore(room: Room) {
-	rooms.set(norm(room.code), room);
+	rooms.set(normalize(room.code), room);
 }
