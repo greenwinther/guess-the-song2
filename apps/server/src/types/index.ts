@@ -14,12 +14,15 @@ export interface Submission {
 	id: string; // e.g. youtube videoId
 	title: string;
 	submitterName: string;
+	detailHint?: string;
+	detail?: string;
 }
 
 export interface Guess {
 	memberId: string;
 	submissionId: string;
 	guessedSubmitterName: string;
+	detailGuess?: string;
 	at?: number;
 }
 
@@ -30,21 +33,15 @@ export interface ThemeState {
 	hints: string[]; // hint strings revealed over time
 	revealed: boolean; // if the theme has been fully revealed
 	// who solved it (first-solves are useful for bonus points)
-	solvedBy: string[]; // memberIds in solve order
-}
-
-export interface ThemeAttempt {
-	memberId: string;
-	guess: string;
-	normalizedGuess: string;
-	correct: boolean;
-	at: number;
+	solvedBy: Array<{ memberId: string; atIndex: number }>;
+	attemptedBy?: Set<string>;
 }
 
 // --- Scores ---
 export interface ScoreRow {
 	memberId: string;
 	correctGuesses: number;
+	detailCorrect: number;
 	themeBonuses: number;
 	hardcoreBonus: number;
 	total: number;
@@ -64,6 +61,9 @@ export interface Room {
 	members: Map<string, Member>;
 	submissions: Submission[];
 
+	controllerId?: string; // current showrunner (optional)
+	hostKey: string; // secret for claiming (see below)
+
 	// gameplay state
 	guesses: Guess[]; // append/idempotent per (memberId, submissionId)
 	revealedSubmissionIds: Set<string>; // revealed in RECAP
@@ -74,10 +74,15 @@ export interface Room {
 		allowGuessingInRecap: boolean; // you wanted this ON
 		maxOneGuessPerSong: boolean; // true (your rule)
 		score: {
-			correctPerSong: number; // e.g. 1
-			themeSolveFirst: number; // e.g. +2
-			themeSolveLater: number; // e.g. +1
-			hardcoreMultiplier: number; // e.g. 1.5x
+			correctPerSong: number; // submitter name correct per song
+			detailCorrect: number; // NEW: per-song detail correct
+			// Tiered theme config (defaults: 20% => 3, 50% => 2, else 1)
+			themeEarlyPercent: number; // e.g. 0.2
+			themeMidPercent: number; // e.g. 0.5
+			themeEarlyPoints: number; // e.g. 3
+			themeMidPoints: number; // e.g. 2
+			themeLatePoints: number; // e.g. 1
+			hardcoreMultiplier: number;
 		};
 	};
 
