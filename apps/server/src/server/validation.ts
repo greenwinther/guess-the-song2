@@ -1,4 +1,5 @@
 // Minimal runtime validation & normalization for rooms.json (no external libs)
+import { defaultMaxListeners } from "events";
 import type { Room, Member, Submission, Guess, ThemeState } from "../types/index.js";
 
 type JsonRoom = Omit<Room, "members" | "revealedSubmissionIds" | "theme"> & {
@@ -33,9 +34,12 @@ function validateSubmission(raw: any): Submission | null {
 	if (!isObj(raw)) return null;
 	const id = asString(raw.id);
 	const title = asString(raw.title);
-	const submitterName = asString(raw.submitterName);
+	let submitterName = asString(raw.submitterName);
+	if (!submitterName && isStr(raw.submitterId)) submitterName = String(raw.submitterId);
+	const detailHint = raw.detailHint === undefined ? undefined : String(raw.detailHint);
+	const detail = raw.detail === undefined ? undefined : String(raw.detail);
 	if (!id || !title || !submitterName) return null;
-	return { id, title, submitterName };
+	return { id, title, submitterName, detailHint, detail };
 }
 
 function validateGuess(raw: any): Guess | null {
@@ -44,19 +48,26 @@ function validateGuess(raw: any): Guess | null {
 	const submissionId = asString(raw.submissionId);
 	const guessedSubmitterName = asString(raw.guessedSubmitterName);
 	const at = raw.at === undefined ? undefined : asNum(raw.at, 0);
+	const detailGuess = raw.detailGuess === undefined ? undefined : String(raw.detailGuess);
 	if (!memberId || !submissionId || !guessedSubmitterName) return null;
-	return { memberId, submissionId, guessedSubmitterName, at };
+	return { memberId, submissionId, guessedSubmitterName, at, detailGuess };
 }
 
 function validateTheme(raw: any): ThemeState {
-	// Be forgiving: default missing fields
 	const currentTheme = raw?.currentTheme ?? null;
+	const attemptedByArr = Array.isArray(raw?.attemptedBy) ? raw.attemptedBy.map(String) : [];
 	return {
 		currentTheme: currentTheme === null ? null : String(currentTheme),
 		normalizedTheme: raw?.normalizedTheme ?? null,
 		hints: Array.isArray(raw?.hints) ? raw.hints.map(String) : [],
 		revealed: !!raw?.revealed,
-		solvedBy: Array.isArray(raw?.solvedBy) ? raw.solvedBy.map(String) : [],
+		solvedBy: Array.isArray(raw?.solvedBy)
+			? raw.solvedBy.map((x: any) => ({
+					memberId: String(x?.memberId),
+					atIndex: Math.max(0, Number(x?.atIndex ?? 0)),
+			  }))
+			: [],
+		attemptedBy: new Set<string>(attemptedByArr),
 	};
 }
 
@@ -75,6 +86,10 @@ export function validateRoomJson(raw: any): Room | null {
 		const v = validateMember(m);
 		if (v) members.set(v.id, v);
 	}
+
+	const controllerId = asString(raw.controllerId, undefined);
+
+	const hostKey = asString(raw.hostKey, undefined);
 
 	const submissionsArr = Array.isArray(raw.submissions) ? raw.submissions : [];
 	const submissions: Submission[] = [];
@@ -104,8 +119,12 @@ export function validateRoomJson(raw: any): Room | null {
 					maxOneGuessPerSong: !!raw.rules.maxOneGuessPerSong,
 					score: {
 						correctPerSong: asNum(raw.rules.score.correctPerSong, 1),
-						themeSolveFirst: asNum(raw.rules.score.themeSolveFirst, 2),
-						themeSolveLater: asNum(raw.rules.score.themeSolveLater, 1),
+						detailCorrect: asNum(raw.rules.score.detailCorrect, 1),
+						themeEarlyPercent: asNum(raw.rules.score.themeEarlyPercent, 0.2),
+						themeMidPercent: asNum(raw.rules.score.themeMidPercent, 0.5),
+						themeEarlyPoints: asNum(raw.rules.score.themeEarlyPoints, 3),
+						themeMidPoints: asNum(raw.rules.score.themeMidPoints, 2),
+						themeLatePoints: asNum(raw.rules.score.themeLatePoints, 1),
 						hardcoreMultiplier: asNum(raw.rules.score.hardcoreMultiplier, 1.5),
 					},
 			  }
@@ -114,8 +133,12 @@ export function validateRoomJson(raw: any): Room | null {
 					maxOneGuessPerSong: true,
 					score: {
 						correctPerSong: 1,
-						themeSolveFirst: 2,
-						themeSolveLater: 1,
+						detailCorrect: 1,
+						themeEarlyPercent: 0.2,
+						themeMidPercent: 0.5,
+						themeEarlyPoints: 3,
+						themeMidPoints: 2,
+						themeLatePoints: 1,
 						hardcoreMultiplier: 1.5,
 					},
 			  };
@@ -130,6 +153,8 @@ export function validateRoomJson(raw: any): Room | null {
 		code,
 		phase,
 		currentIndex,
+		controllerId,
+		hostKey,
 		members,
 		submissions,
 		guesses,

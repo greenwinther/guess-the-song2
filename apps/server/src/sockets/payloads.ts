@@ -5,6 +5,7 @@ export type GameSetIndexPayload = { index: number };
 export type GuessSubmitPayload = {
 	submissionId: string;
 	guessedSubmitterName: string;
+	detailGuess?: string;
 };
 
 export type PlayerSetHardcorePayload = { hardcore: boolean };
@@ -18,7 +19,10 @@ export type SubmissionAddPayload = {
 	id: string;
 	title: string;
 	submitterName: string;
+	detailsHint?: string;
+	details?: string;
 };
+
 export type SubmissionRemovePayload = { id: string };
 
 export type ThemeSetPayload = { theme: string; hints?: string[] };

@@ -1,35 +1,60 @@
 // src/logic/scoring.ts
 import type { Room, ScoreBoard, ScoreRow } from "../types/index.js";
+import { normalize } from "../utils/text.js";
 
 export function computeScores(room: Room): ScoreBoard {
 	const rows = new Map<string, ScoreRow>();
 	const ensure = (id: string) =>
 		rows.get(id) ??
-		(rows.set(id, { memberId: id, correctGuesses: 0, themeBonuses: 0, hardcoreBonus: 0, total: 0 }),
+		(rows.set(id, {
+			memberId: id,
+			correctGuesses: 0,
+			detailCorrect: 0,
+			themeBonuses: 0,
+			hardcoreBonus: 0,
+			total: 0,
+		}),
 		rows.get(id)!);
 
-	// correct guesses
+	const sc = room.rules.score;
+
+	// --- Per-song guesses: submitter name + detail
 	for (const g of room.guesses) {
 		const sub = room.submissions.find((s) => s.id === g.submissionId);
 		if (!sub) continue;
-		if (g.guessedSubmitterName === sub.submitterName) {
-			ensure(g.memberId).correctGuesses += room.rules.score.correctPerSong;
+
+		// submitter name correctness
+		if (normalize(g.guessedSubmitterName) === normalize(sub.submitterName)) {
+			ensure(g.memberId).correctGuesses += sc.correctPerSong;
+		}
+
+		// detail correctness (if both provided)
+		if (sub.detail && g.detailGuess && normalize(g.detailGuess) === normalize(sub.detail)) {
+			ensure(g.memberId).detailCorrect += sc.detailCorrect;
 		}
 	}
 
-	// theme bonuses
-	const first = room.theme.solvedBy[0];
-	if (first) ensure(first).themeBonuses += room.rules.score.themeSolveFirst;
-	for (const m of room.theme.solvedBy.slice(1)) ensure(m).themeBonuses += room.rules.score.themeSolveLater;
+	// --- Theme tiered bonus (one attempt total enforced elsewhere)
+	const totalSongs = Math.max(1, room.submissions.length);
+	const earlyCut = Math.ceil(totalSongs * sc.themeEarlyPercent); // ≤ early ⇒ earlyPoints
+	const midCut = Math.ceil(totalSongs * sc.themeMidPercent); // ≤ mid   ⇒ midPoints else latePoints
 
-	// hardcore multiplier (on guess points only)
+	for (const { memberId, atIndex } of room.theme.solvedBy) {
+		const pos = Math.min(totalSongs, atIndex + 1); // 1-based song position when solved
+		let pts = sc.themeLatePoints;
+		if (pos <= earlyCut) pts = sc.themeEarlyPoints;
+		else if (pos <= midCut) pts = sc.themeMidPoints;
+		ensure(memberId).themeBonuses += pts;
+	}
+
+	// --- Hardcore multiplier (on total pre-multiplier points)
 	for (const m of room.members.values()) {
 		const r = ensure(m.id);
-		const base = r.correctGuesses + r.themeBonuses;
+		const base = r.correctGuesses + r.detailCorrect + r.themeBonuses;
 		if (m.hardcore) {
-			const bonus = Math.round(r.correctGuesses * (room.rules.score.hardcoreMultiplier - 1));
-			r.hardcoreBonus = bonus;
-			r.total = base + bonus;
+			const boosted = Math.round(base * sc.hardcoreMultiplier * 100) / 100;
+			r.hardcoreBonus = boosted - base;
+			r.total = boosted;
 		} else {
 			r.total = base;
 		}

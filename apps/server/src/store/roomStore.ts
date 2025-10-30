@@ -1,6 +1,6 @@
 // src/store/roomStore.ts
 import { randomUUID } from "crypto";
-import { isValidRoomCode } from "../utils/ids.js";
+import { isValidRoomCode, randomString } from "../utils/ids.js";
 import { Member, Room } from "../types/index.js";
 
 const rooms = new Map<string, Room>();
@@ -16,6 +16,8 @@ export const createRoom = (code: string): Room => {
 		code: normalized,
 		phase: "LOBBY",
 		currentIndex: 0,
+		controllerId: undefined,
+		hostKey: randomString(8),
 		members: new Map(),
 		submissions: [],
 		guesses: [],
@@ -24,7 +26,17 @@ export const createRoom = (code: string): Room => {
 		rules: {
 			allowGuessingInRecap: true,
 			maxOneGuessPerSong: true,
-			score: { correctPerSong: 1, themeSolveFirst: 2, themeSolveLater: 1, hardcoreMultiplier: 1.5 },
+			// roomStore.ts createRoom defaults
+			score: {
+				correctPerSong: 1,
+				detailCorrect: 1,
+				themeEarlyPercent: 0.2,
+				themeMidPercent: 0.5,
+				themeEarlyPoints: 3,
+				themeMidPoints: 2,
+				themeLatePoints: 1,
+				hardcoreMultiplier: 1.5,
+			},
 		},
 		createdAt: now,
 		expiresAt: now + DAY, // default 1 day

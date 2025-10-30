@@ -6,6 +6,7 @@ export function toPublicRoomState(room: Room) {
 		code: room.code,
 		phase: room.phase,
 		currentIndex: room.currentIndex,
+		controllerId: room.controllerId ?? null,
 		members: [...room.members.values()].map((m) => ({
 			id: m.id,
 			name: m.name,
@@ -13,9 +14,19 @@ export function toPublicRoomState(room: Room) {
 			connected: m.connected,
 			hardcore: !!m.hardcore,
 		})),
-		submissions: room.submissions,
+		submissions: room.submissions.map((s) => ({
+			id: s.id,
+			title: s.title,
+			submitterName: s.submitterName,
+			detailHint: s.detailHint ?? undefined, // expose hint only
+			// detail is intentionally omitted
+		})),
 		revealedSubmissionIds: [...room.revealedSubmissionIds],
-		theme: { revealed: room.theme.revealed, hints: room.theme.hints, solvedBy: room.theme.solvedBy },
+		theme: {
+			revealed: room.theme.revealed,
+			hints: room.theme.hints,
+			solvedBy: room.theme.solvedBy.map((x) => x.memberId), // only memberIds
+		},
 		saved: room.saved,
 		expiresAt: room.expiresAt,
 	};
