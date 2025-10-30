@@ -2,16 +2,11 @@
   {
     "code": "ABCD",
     "phase": "LOBBY",
-    "currentIndex": 0,
+    "currentIndex": null,
+    "hostKey": "D5428KQY",
     "members": [
       {
         "id": "4bee98b3-cf98-4de5-9aa7-95fe767d3168",
-        "name": "Dennis",
-        "isHost": false,
-        "connected": false
-      },
-      {
-        "id": "8f141a4c-89e1-45f4-91c7-8f37ca62ab43",
         "name": "Dennis",
         "isHost": false,
         "connected": false
@@ -19,43 +14,46 @@
     ],
     "submissions": [
       {
-        "id": "yt123",
+        "id": "yt1",
         "title": "Song A",
-        "submitterId": "4bee98b3-cf98-4de5-9aa7-95fe767d3168"
+        "submitterName": "Sammy",
+        "detailHint": "Which year?",
+        "detail": "2010"
       },
       {
-        "id": "yt123",
-        "title": "Song A",
-        "submitterId": "8f141a4c-89e1-45f4-91c7-8f37ca62ab43"
+        "id": "yt2",
+        "title": "Song B",
+        "submitterName": "Alex",
+        "detailHint": "BPM?",
+        "detail": "128"
       }
     ],
     "guesses": [],
     "revealedSubmissionIds": [],
     "theme": {
-      "currentTheme": "Animals",
-      "normalizedTheme": "animals",
-      "hints": [
-        "mammal",
-        "nocturnal"
-      ],
-      "revealed": true,
-      "solvedBy": [
-        "4bee98b3-cf98-4de5-9aa7-95fe767d3168",
-        "8f141a4c-89e1-45f4-91c7-8f37ca62ab43"
-      ]
+      "currentTheme": null,
+      "normalizedTheme": null,
+      "hints": [],
+      "revealed": false,
+      "solvedBy": [],
+      "attemptedBy": []
     },
     "rules": {
       "allowGuessingInRecap": true,
       "maxOneGuessPerSong": true,
       "score": {
         "correctPerSong": 1,
-        "themeSolveFirst": 2,
-        "themeSolveLater": 1,
+        "detailCorrect": 1,
+        "themeEarlyPercent": 0.2,
+        "themeMidPercent": 0.5,
+        "themeEarlyPoints": 3,
+        "themeMidPoints": 2,
+        "themeLatePoints": 1,
         "hardcoreMultiplier": 1.5
       }
     },
-    "createdAt": 1761833270263,
-    "expiresAt": 1762438174881,
-    "saved": true
+    "createdAt": 1761844308447,
+    "expiresAt": 1761930708447,
+    "saved": false
   }
 ]

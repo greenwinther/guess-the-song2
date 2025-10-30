@@ -1,50 +1,87 @@
 // apps/server/scripts/devClient.ts
 import { io } from "socket.io-client";
+import fs from "fs";
+import path from "path";
 
-const URL = process.env.SERVER_URL || "http://127.0.0.1:8080"; // 127.0.0.1 avoids some IPv6 quirks
-console.log("[client] connecting to", URL);
+const URL = process.env.SERVER_URL || "http://127.0.0.1:8080";
+const SESSION_PATH = path.join(process.cwd(), "scripts", ".devsession.json");
 
-const socket = io(URL, {
-	// don't force websocket; let it negotiate (polling → websocket)
-	reconnectionAttempts: 5,
-	timeout: 5000,
-});
+type Session = { roomCode: string; name: string; memberId?: string };
+const loadSession = (): Session => {
+	try {
+		return JSON.parse(fs.readFileSync(SESSION_PATH, "utf8"));
+	} catch {
+		return { roomCode: "ABCD", name: "Dennis" };
+	}
+};
+const saveSession = (s: Session) => fs.writeFileSync(SESSION_PATH, JSON.stringify(s, null, 2));
 
-socket.on("connect", () => {
-	console.log("[client] connected as", socket.id);
+const session = loadSession();
+const socket = io(URL, { reconnectionAttempts: 2, timeout: 5000 });
 
-	socket.emit("room:join", { code: "ABCD", name: "Dennis" }, (resp: any) => {
-		console.log("[client] join ack:", resp);
-
-		socket.emit("guess:submit", { submissionId: "yt123", guessedSubmitterName: "Sammy" }, (g: any) => {
-			console.log("[client] guess ack:", g);
-
-			socket.emit("score:compute", (s: any) => {
-				console.log("[client] score ack:", s);
-				process.exit(0);
-			});
-		});
-
-		socket.emit("theme:set", { theme: "Animals", hints: ["mammal", "nocturnal"] }, (r: any) => {
-			console.log("[client] theme:set", r);
-			socket.emit("theme:guess", { guess: "Animals" }, (r2: any) => {
-				console.log("[client] theme:guess", r2);
-				socket.emit("theme:reveal", {}, (r3: any) => {
-					console.log("[client] theme:reveal", r3);
-					process.exit(0);
-				});
-			});
-		});
+const emitAck = <T = any>(event: string, payload?: any) =>
+	new Promise<T>((resolve, reject) => {
+		socket.emit(event, payload ?? {}, (resp: any) => (resp?.ok === false ? reject(resp) : resolve(resp)));
 	});
+
+socket.on("connect", async () => {
+	try {
+		// 👇 pass memberId if we have one
+		const join = await emitAck<{ memberId: string; room: any }>("room:join", {
+			code: session.roomCode,
+			name: session.name,
+			memberId: session.memberId,
+		});
+		// Save the issued/stable memberId for next run
+		session.memberId = join.memberId;
+		saveSession(session);
+
+		console.log("[join]", join.room.code, "memberId:", join.memberId);
+
+		await emitAck("submission:add", {
+			id: "yt1",
+			title: "Song A",
+			submitterName: "Sammy",
+			detailHint: "Which year?",
+			detail: "2010",
+		});
+		await emitAck("submission:add", {
+			id: "yt2",
+			title: "Song B",
+			submitterName: "Alex",
+			detailHint: "BPM?",
+			detail: "128",
+		});
+
+		// (optional) set index to 0 → early tier; set to 1..N to test mid/late tiers
+		await emitAck("game:setIndex", { currentIndex: 0 });
+
+		await emitAck("guess:submit", {
+			submissionId: "yt1",
+			guessedSubmitterName: "Sammy",
+			detailGuess: "2010",
+		});
+		await emitAck("guess:submit", {
+			submissionId: "yt2",
+			guessedSubmitterName: "Alex",
+			detailGuess: "128",
+		});
+
+		await emitAck("theme:set", { theme: "Animals", hints: ["mammal"] });
+		await emitAck("theme:guess", { guess: "Animals" });
+
+		const score = await emitAck<{ scoreboard: any }>("score:compute");
+		console.log("[score]");
+		console.dir(score.scoreboard, { depth: null });
+	} catch (e) {
+		console.error("[devClient error]", e);
+	} finally {
+		process.exit(0);
+	}
 });
 
 socket.on("connect_error", (err) => console.error("[client] connect_error:", err.message));
-socket.on("reconnect_failed", () => {
-	console.error("[client] reconnect_failed");
-	process.exit(1);
-});
-
 setTimeout(() => {
-	console.error("[client] timeout waiting for server");
+	console.error("[client] timeout");
 	process.exit(1);
 }, 15000);
