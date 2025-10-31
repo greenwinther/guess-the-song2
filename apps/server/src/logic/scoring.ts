@@ -24,7 +24,7 @@ export function computeScores(room: Room): ScoreBoard {
 		if (!sub) continue;
 
 		// submitter name correctness
-		if (normalizeRoomCode(g.guessedSubmitterName) === normalizeRoomCode(sub.submitterName)) {
+		if (g.guessedSubmissionId === sub.id) {
 			ensure(g.memberId).correctGuesses += sc.correctPerSong;
 		}
 
