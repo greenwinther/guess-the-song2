@@ -10,7 +10,9 @@
     "start": "node dist/index.js",
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:push": "drizzle-kit push",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "test:unit": "tsx scripts/testScoring.unit.ts",
+    "test:e2e": "tsx scripts/testGame.e2e.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
