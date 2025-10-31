@@ -13,13 +13,13 @@ export function register(io: Server, socket: Socket) {
 
 		if (!allowGuessing(room)) return ackErr(ack, "PHASE_LOCKED");
 
-		const payload = {
-			memberId: me.id,
-			submissionId: guess.submissionId,
-			guessedSubmitterName: guess.guessedSubmitterName,
-			detailGuess: guess.detailGuess,
-			at: Date.now(),
-		};
+		// validate ids exist
+		if (!room.submissions.some((s) => s.id === guess.submissionId))
+			return ackErr(ack, "INVALID_SUBMISSION");
+		if (!room.submissions.some((s) => s.id === guess.guessedSubmissionId))
+			return ackErr(ack, "INVALID_OPTION");
+
+		const payload = { ...guess, memberId: me.id, at: Date.now() };
 
 		const idx = room.guesses.findIndex(
 			(x) => x.memberId === me.id && x.submissionId === guess.submissionId
