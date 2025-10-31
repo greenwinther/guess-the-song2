@@ -26,10 +26,11 @@ export function register(io: Server, socket: Socket) {
 		ackOk(ack);
 	});
 
-	socket.on("reveal:add", ({ submissionId }: { submissionId: string }) => {
-		const room = requireRoom(socket);
+	socket.on("reveal:add", ({ submissionId }: { submissionId: string }, ack?: Ack) => {
+		const room = requireRoom(socket, ack);
 		if (!room) return;
 		room.revealedSubmissionIds.add(submissionId);
 		io.to(room.code).emit("reveal:update", [...room.revealedSubmissionIds]);
+		ackOk(ack);
 	});
 }
