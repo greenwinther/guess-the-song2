@@ -1,4 +1,4 @@
-// apps/server/scripts/devClient.ts
+// apps/server/scripts/devClient.ts npm run dev:client
 import { io } from "socket.io-client";
 import fs from "fs";
 import path from "path";
