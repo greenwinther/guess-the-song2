@@ -19,9 +19,16 @@ const saveSession = (s: Session) => fs.writeFileSync(SESSION_PATH, JSON.stringif
 const session = loadSession();
 const socket = io(URL, { reconnectionAttempts: 2, timeout: 5000 });
 
-const emitAck = <T = any>(event: string, payload?: any) =>
+const emitAck = <T = any>(event: string, payload?: any, ms = 5000) =>
 	new Promise<T>((resolve, reject) => {
-		socket.emit(event, payload ?? {}, (resp: any) => (resp?.ok === false ? reject(resp) : resolve(resp)));
+		const t = setTimeout(() => reject({ ok: false, error: `ACK_TIMEOUT:${event}` }), ms);
+		console.log(`[emit] ${event}`, payload ?? {});
+		socket.emit(event, payload ?? {}, (resp: any) => {
+			clearTimeout(t);
+			console.log(`[ack ] ${event}`, resp);
+			if (resp?.ok === false) return reject(resp);
+			resolve(resp as T);
+		});
 	});
 
 socket.on("connect", async () => {
@@ -36,42 +43,60 @@ socket.on("connect", async () => {
 		session.memberId = join.memberId;
 		saveSession(session);
 
+		// after join succeeds:
 		console.log("[join]", join.room.code, "memberId:", join.memberId);
 
-		await emitAck("submission:add", {
-			id: "yt1",
+		// add songs, then guess
+		const s1 = await emitAck<{ id: string }>("submission:add", {
+			id: "1",
 			title: "Song A",
+			videoId: "abc123",
 			submitterName: "Sammy",
 			detailHint: "Which year?",
 			detail: "2010",
 		});
-		await emitAck("submission:add", {
-			id: "yt2",
+		const s2 = await emitAck<{ id: string }>("submission:add", {
+			id: "2",
 			title: "Song B",
+			videoId: "def456",
 			submitterName: "Alex",
 			detailHint: "BPM?",
 			detail: "128",
 		});
+		const s3 = await emitAck<{ id: string }>("submission:add", {
+			id: "3",
+			title: "Song C",
+			videoId: "ghi789",
+			submitterName: "Berit",
+			detailHint: "BPM?",
+			detail: "123",
+		});
 
-		// (optional) set index to 0 → early tier; set to 1..N to test mid/late tiers
+		// host-only
+		await emitAck("theme:set", { theme: "Animals", hints: ["mammal"] });
+		await emitAck("game:setPhase", { phase: "GUESSING" });
 		await emitAck("game:setIndex", { currentIndex: 0 });
 
+		// Guess the submitter by pointing to their *submission id*
 		await emitAck("guess:submit", {
-			submissionId: "yt1",
-			guessedSubmitterName: "Sammy",
+			submissionId: s1.id, // guessing for Song A
+			guessedSubmissionId: s1.id, // “Sammy’s song” is Song A
 			detailGuess: "2010",
 		});
 		await emitAck("guess:submit", {
-			submissionId: "yt2",
-			guessedSubmitterName: "Alex",
+			submissionId: s2.id,
+			guessedSubmissionId: s2.id,
 			detailGuess: "128",
 		});
+		await emitAck("guess:submit", {
+			submissionId: s3.id,
+			guessedSubmissionId: s3.id,
+			detailGuess: "123",
+		});
 
-		await emitAck("theme:set", { theme: "Animals", hints: ["mammal"] });
 		await emitAck("theme:guess", { guess: "Animals" });
 
 		const score = await emitAck<{ scoreboard: any }>("score:compute");
-		console.log("[score]");
 		console.dir(score.scoreboard, { depth: null });
 	} catch (e) {
 		console.error("[devClient error]", e);
