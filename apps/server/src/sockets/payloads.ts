@@ -4,7 +4,7 @@ export type GameSetIndexPayload = { index: number };
 
 export type GuessSubmitPayload = {
 	submissionId: string;
-	guessedSubmitterName: string;
+	guessedSubmissionId: string;
 	detailGuess?: string;
 };
 
@@ -17,10 +17,11 @@ export type HostAssignPayload = { targetId: string };
 
 export type SubmissionAddPayload = {
 	id: string;
+	videoId: string;
 	title: string;
 	submitterName: string;
-	detailsHint?: string;
-	details?: string;
+	detailHint?: string;
+	detail?: string;
 };
 
 export type SubmissionRemovePayload = { id: string };
