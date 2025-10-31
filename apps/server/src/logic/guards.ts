@@ -55,8 +55,10 @@ export function requirePhase(room: Room, allowed: Phase[] | Phase, ack?: Ack) {
 }
 
 /** Convenience: allow guessing in GUESSING or (RECAP if rule permits). */
-export function allowGuessing(room: Room): boolean {
-	return room.phase === "GUESSING" || (room.phase === "RECAP" && room.rules.allowGuessingInRecap);
+export function allowGuessing(room: Room, ack?: Ack) {
+	const ok = room.phase === "GUESSING" || (room.phase === "RECAP" && room.rules.allowGuessingInRecap);
+	if (!ok) ackErr(ack, "PHASE_LOCKED");
+	return ok;
 }
 
 export function requireController(socket: Socket, room: Room, ack?: Ack) {
