@@ -11,17 +11,18 @@ export interface Member {
 }
 
 export interface Submission {
-	id: string; // e.g. youtube videoId
-	title: string;
-	submitterName: string;
-	detailHint?: string;
-	detail?: string;
+	id: string; // unique id
+	title: string; // song title
+	videoId?: string; // YouTube video ID
+	submitterName: string; // name of the submitter shown in UI
+	detailHint?: string; // hint for additional details
+	detail?: string; // additional details about the submission
 }
 
 export interface Guess {
 	memberId: string;
-	submissionId: string;
-	guessedSubmitterName: string;
+	submissionId: string; // the song being guessed
+	guessedSubmissionId: string; // which submitter (via their song id)
 	detailGuess?: string;
 	at?: number;
 }
