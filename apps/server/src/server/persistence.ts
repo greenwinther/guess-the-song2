@@ -26,6 +26,7 @@ export async function loadRoomsFromDisk() {
 	try {
 		if (!fs.existsSync(ROOMS_FILE)) return;
 		const raw = await fs.promises.readFile(ROOMS_FILE, "utf8");
+		if (!raw.trim()) return []; // <-- empty file => no rooms
 		const parsed = JSON.parse(raw);
 		if (!Array.isArray(parsed)) return;
 
