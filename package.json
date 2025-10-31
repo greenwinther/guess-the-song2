@@ -13,7 +13,8 @@
     "build": "npm --workspace apps/server run build",
     "start": "npm --workspace apps/server run start",
     "drizzle:generate": "npm --workspace apps/server run drizzle:generate",
-    "drizzle:push": "npm --workspace apps/server run drizzle:push"
+    "drizzle:push": "npm --workspace apps/server run drizzle:push",
+    "test": "npm --workspace apps/server run test:unit && npm --workspace apps/server run test:e2e"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
