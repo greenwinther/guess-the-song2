@@ -5,7 +5,7 @@ import { Ack, ackOk } from "../utils/ack.js";
 import { requireRoom } from "../logic/guards.js";
 
 export function register(io: Server, socket: Socket) {
-	socket.on("score:compute", (ack?: Ack) => {
+	socket.on("score:compute", (_: {}, ack?: Ack) => {
 		const room = requireRoom(socket, ack);
 		if (!room) return;
 		const sb = computeScores(room);
